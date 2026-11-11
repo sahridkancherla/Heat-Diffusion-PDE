@@ -35,8 +35,8 @@ mlruns/
 *.ckpt
 *.safetensors
 
-# --- Derived / cached data (raw CSVs in Data/ ARE tracked) ---
-Data/processed/
+# --- Data ---
+Data/
 *.npz
 *.h5
 *.hdf5
