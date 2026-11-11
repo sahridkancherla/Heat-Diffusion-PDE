@@ -1,0 +1,5 @@
+* text=auto
+
+# Raw recordings have mixed CRLF/LF endings; store them byte-for-byte.
+*.csv -text
+*.mp4 binary

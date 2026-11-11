@@ -1,0 +1,52 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- Environments ---
+.venv/
+venv/
+env/
+.env
+
+# --- Tooling caches ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Experiment outputs (checkpoints, logs, figures) ---
+outputs/
+runs/
+checkpoints/
+lightning_logs/
+wandb/
+mlruns/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# --- Derived / cached data (raw CSVs in Data/ ARE tracked) ---
+Data/processed/
+*.npz
+*.h5
+*.hdf5
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Claude Code (personal settings only) ---
+.claude/settings.local.json
