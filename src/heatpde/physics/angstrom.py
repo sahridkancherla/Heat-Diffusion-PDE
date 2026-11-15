@@ -17,6 +17,7 @@ import numpy as np
 from scipy.optimize import least_squares
 
 from heatpde.data.io import Run
+from heatpde.data.preprocess import drive_cycles
 from heatpde.geometry import ROD_LENGTH, THERMISTOR_X
 
 
@@ -32,29 +33,6 @@ class AngstromResult:
     alpha: float  # m²/s
     h: float  # 1/s
     fit_rms: float  # rms of complex-log residuals of the finite-rod fit
-
-
-def drive_cycles(t: np.ndarray, v: np.ndarray, nominal_period: float, tol: float = 0.02):
-    """Upward zero crossings of the drive in the last stretch whose cycles match the nominal period.
-
-    Returns (crossing times, fitted period).
-    """
-    i = np.flatnonzero((v[:-1] < 0) & (v[1:] >= 0))
-    tc = t[i] - v[i] * (t[i + 1] - t[i]) / (v[i + 1] - v[i])
-
-    keep = [tc[0]]
-    for x in tc[1:]:
-        if x - keep[-1] > 0.5 * nominal_period:
-            keep.append(x)
-    tc = np.array(keep)
-
-    good = np.abs(np.diff(tc) / nominal_period - 1) < tol
-    if not good[-1]:
-        raise ValueError("drive at end of run does not match the nominal period")
-    start = len(good) - np.argmin(good[::-1]) if not good.all() else 0
-    tc = tc[start:]
-    period = np.polyfit(np.arange(len(tc)), tc, 1)[0]
-    return tc, period
 
 
 def harmonic_fit(
