@@ -58,7 +58,7 @@ class FNO2d(nn.Module):
     def forward(self, x):
         z, t = x.shape[-2:]
         x = self.lift(x)
-        x = F.pad(x, int(0, (self.pad_t_frac * t), 0, self.pad_z))
+        x = F.pad(x, (0, int(self.pad_t_frac * t), 0, self.pad_z))
 
         for n in range(self.num_layers):
             x = F.gelu(self.fourier_layers[n](x) + self.w_layers[n](x))
