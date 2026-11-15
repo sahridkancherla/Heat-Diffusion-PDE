@@ -1,5 +1,6 @@
 """Loading raw thermistor recordings and building training datasets."""
 
+from heatpde.data.datasets import WindowDataset
 from heatpde.data.io import DATA_DIR, Run, RunInfo, list_runs, load_run, parse_run_info
 from heatpde.data.normalise import Normaliser, RunNormalisers, Scales
 from heatpde.data.preprocess import ProcessedRun, load_processed, preprocess_run
@@ -14,6 +15,7 @@ __all__ = [
     "RunNormalisers",
     "Scales",
     "Split",
+    "WindowDataset",
     "holdout_materials",
     "holdout_periods",
     "list_runs",

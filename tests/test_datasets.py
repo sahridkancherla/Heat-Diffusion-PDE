@@ -1,0 +1,52 @@
+from pathlib import Path
+
+import numpy as np
+import pytest
+import torch
+
+from heatpde.data import ProcessedRun, RunInfo, RunNormalisers, Scales, WindowDataset
+
+
+def make_runs(lengths=(100, 50)):
+    rng = np.random.default_rng(0)
+    return [
+        ProcessedRun(
+            info=RunInfo(Path(f"{m}.csv"), 7.0, 10.0),
+            period=10.0,
+            t=0.1 * np.arange(m),
+            T=30 + rng.standard_normal((m, 8)),
+            voltage=rng.standard_normal(m),
+            current=rng.standard_normal(m),
+        )
+        for m in lengths
+    ]
+
+
+def test_window_shapes_and_channels():
+    runs = make_runs()
+    norm = RunNormalisers.fit(runs)
+    ds = WindowDataset(runs, norm, Scales(time=10.0), window=32, stride=16)
+    assert len(ds) == 5 + 2  # (100-32)//16+1, (50-32)//16+1
+    x, y = ds[1]
+    assert x.shape == (ds.in_channels, 8, 32) and y.shape == (1, 8, 32)
+    torch.testing.assert_close(x[0, 3], y[0, 0])  # thermistor_0 forcing, broadcast over z
+    torch.testing.assert_close(x[1, :, 5], y[0, :, 0])  # initial profile, broadcast over t
+    assert x[3, 0, 0] == 0 and x[3, 0, 1] == pytest.approx(0.01)  # dt / time scale
+    expected = norm.T.encode(runs[0].T[16:48].T)
+    np.testing.assert_allclose(y[0].numpy(), expected, rtol=1e-5)
+
+
+def test_voltage_forcing_without_initial_condition():
+    runs = make_runs()
+    norm = RunNormalisers.fit(runs)
+    ds = WindowDataset(
+        runs, norm, Scales(time=1.0), window=50, forcing="voltage", initial_condition=False
+    )
+    x, _ = ds[0]
+    assert x.shape[0] == ds.in_channels == 3
+    np.testing.assert_allclose(x[0, 0].numpy(), norm.voltage.encode(runs[0].voltage[:50]), 1e-5)
+
+
+def test_window_too_long():
+    with pytest.raises(ValueError):
+        WindowDataset(make_runs(), RunNormalisers.fit(make_runs()), Scales(1.0), window=101)
