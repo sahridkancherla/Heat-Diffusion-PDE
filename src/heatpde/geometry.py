@@ -1,4 +1,4 @@
-"""Rig geometry. x = 0 is the heat-pump end of the cylinder."""
+"""Cylinder geometry. x = 0 is the heat-pump end of the cylinder."""
 
 import numpy as np
 

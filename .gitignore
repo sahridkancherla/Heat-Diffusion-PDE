@@ -35,8 +35,8 @@ mlruns/
 *.ckpt
 *.safetensors
 
-# --- Data ---
-Data/
+# --- Data (leading slash: root only; git on Windows is case-insensitive, so "Data/" also matched src/heatpde/data/) ---
+/Data/
 *.npz
 *.h5
 *.hdf5
