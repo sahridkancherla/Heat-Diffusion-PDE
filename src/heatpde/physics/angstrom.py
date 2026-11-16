@@ -83,6 +83,8 @@ def fit_finite_rod(
         r -= r.mean()  # optimal log B
         return np.concatenate([r.real, r.imag])
 
+    if not (np.isfinite(alpha0) and alpha0 > 0):  # e.g. estimate from a non-decaying field
+        alpha0 = 3e-5
     bounds = (np.log([1e-7, 1e-7]), np.log([1e-3, 1.0]))
     p0 = np.clip(np.log([alpha0, h0]), bounds[0] + 1e-6, bounds[1] - 1e-6)
     sol = least_squares(residual, p0, bounds=bounds)

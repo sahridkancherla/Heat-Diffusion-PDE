@@ -25,6 +25,10 @@ class WindowDataset(Dataset):
     y: (1, 8, window) normalised temperatures.
     t is time since the window start divided by ``scales.time`` (or the run's period if None).
     α̂ = scales.alpha(run.info.alpha) needs runs whose RunInfo went through assign_materials.
+    window_norm: forcing, initial profile and target become (T - b) / a per window, with
+    b = mean initial profile and a = std of the forcing (both inputs, so invertible at inference).
+    Valid because the heat equation is linear and shift-invariant; equalises loss weight across
+    drive periods whose amplitudes differ ~15x.
     """
 
     def __init__(
@@ -37,11 +41,15 @@ class WindowDataset(Dataset):
         forcing: Forcing = "thermistor_0",
         initial_condition: bool = True,
         alpha_channel: bool = False,
+        window_norm: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         self.window = window
         self.initial_condition = initial_condition
         self.alpha_channel = alpha_channel
+        self.window_norm = window_norm
+        if window_norm and forcing != "thermistor_0":
+            raise ValueError("window_norm needs a temperature forcing (thermistor_0)")
         self.infos: list[RunInfo] = [r.info for r in runs]
         self.z = torch.as_tensor(scales.x(THERMISTOR_X), dtype=dtype)
 
@@ -81,6 +89,16 @@ class WindowDataset(Dataset):
     def in_channels(self) -> int:
         return self.n_channels(self.initial_condition, self.alpha_channel)
 
+    MIN_SCALE = 1e-2  # normalised units, guards windows with almost no forcing
+
+    def window_affine(self, i: int) -> tuple[float, float]:
+        """(a, b) such that window-normalised = (globally normalised - b) / a."""
+        if not self.window_norm:
+            return 1.0, 0.0
+        k, s = self.index[i]
+        T = self.fields[k][:, s : s + self.window]
+        return max(float(T[0].std()), self.MIN_SCALE), float(T[:, 0].mean())
+
     def __len__(self) -> int:
         return len(self.index)
 
@@ -88,6 +106,9 @@ class WindowDataset(Dataset):
         k, s = self.index[i]
         sl = slice(s, s + self.window)
         T, f, t = self.fields[k][:, sl], self.forcings[k][sl], self.times[k][sl]
+        if self.window_norm:
+            a, b = self.window_affine(i)
+            T, f = (T - b) / a, (f - b) / a
         shape = T.shape
 
         channels = [f.expand(shape)]

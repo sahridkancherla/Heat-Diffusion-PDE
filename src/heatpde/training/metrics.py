@@ -43,10 +43,16 @@ def drive_frequency_errors(
     period: float,
     skip_frac: float = 0.3,
     min_snr: float = 50.0,
+    skip_sensors: int = 0,
 ) -> dict:
-    """Amplitude ratio and phase error per sensor, and Ångström α of measured vs predicted field."""
+    """Amplitude ratio and phase error per sensor, and Ångström α of measured vs predicted field.
+
+    The first ``skip_sensors`` predicted rows (model inputs, e.g. the forcing thermistor) are
+    replaced by the measured values so the α fit is not polluted by untrained outputs.
+    """
     a_true, stderr = drive_response(t, true, period, skip_frac)
     a_pred, _ = drive_response(t, pred, period, skip_frac)
+    a_pred[:skip_sensors] = a_true[:skip_sensors]
     used = np.cumprod(np.abs(a_true) / stderr >= min_snr).astype(bool)
     omega = 2 * np.pi / period
 

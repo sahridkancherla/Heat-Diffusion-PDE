@@ -91,3 +91,42 @@ def test_period_time_scale():
     assert x0[4, 0, 1] == pytest.approx(0.1 / 5.0) and x1[4, 0, 1] == pytest.approx(0.1 / 20.0)
     assert x0[2, 0, 0] == pytest.approx(3e-5 * 5.0 / 0.04**2)
     assert x1[2, 0, 0] == pytest.approx(3e-5 * 20.0 / 0.04**2)
+
+
+def test_window_norm_inputs():
+    runs = make_runs()
+    norm = RunNormalisers.fit(runs)
+    ds = WindowDataset(runs, norm, Scales(10.0), window=32, stride=16, window_norm=True)
+    x, y = ds[2]
+    a, b = ds.window_affine(2)
+    assert x[0, 0].std() == pytest.approx(1.0, rel=1e-4)  # forcing scaled to unit std
+    assert x[1, :, 0].mean() == pytest.approx(0.0, abs=1e-5)  # initial profile centred
+    k, s = ds.index[2]
+    raw = torch.as_tensor(norm.T.encode(runs[k].T[s : s + 32].T), dtype=torch.float32)
+    torch.testing.assert_close(y[0] * a + b, raw, rtol=1e-4, atol=1e-5)
+
+
+def test_window_norm_rejects_voltage():
+    runs = make_runs()
+    with pytest.raises(ValueError, match="thermistor_0"):
+        WindowDataset(
+            runs, RunNormalisers.fit(runs), Scales(1.0), 32, forcing="voltage", window_norm=True
+        )
+
+
+def test_predict_run_inverts_window_norm():
+    from heatpde.training.predict import predict_run
+
+    class Persistence(torch.nn.Module):
+        def forward(self, x):
+            return x[:, 1:2]
+
+    run = make_runs((100,))[0]
+    norm = RunNormalisers.fit([run])
+    out = {
+        wn: predict_run(Persistence(), run, norm, Scales(10.0), window=32, window_norm=wn)
+        for wn in (False, True)
+    }
+    for a, b in zip(out[False], out[True], strict=True):
+        np.testing.assert_allclose(a, b, rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(out[True][2][0], run.T[:32].T, rtol=1e-5)

@@ -107,7 +107,7 @@ def main() -> None:
         window_trues.append(tw)
 
         rmse = rmse_per_sensor(pred, run.T)
-        freq = drive_frequency_errors(run.t, pred, run.T, run.period)
+        freq = drive_frequency_errors(run.t, pred, run.T, run.period, skip_sensors=skip)
         s = slice(skip, None)
         ok = freq["used"] & (np.arange(8) >= skip)  # sensors where the drive signal is measurable
         rows.append(
