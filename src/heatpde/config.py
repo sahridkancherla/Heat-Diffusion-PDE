@@ -22,11 +22,12 @@ from heatpde.data import (
 )
 from heatpde.data.preprocess import ProcessedRun
 from heatpde.data.splits import matches
+from heatpde.models.baselines import CNN2d
 from heatpde.models.fno import FNO2d
 from heatpde.physics.materials import assign_materials
 from heatpde.training.trainer import TrainConfig
 
-MODELS: dict[str, type[nn.Module]] = {"fno2d": FNO2d}
+MODELS: dict[str, type[nn.Module]] = {"fno2d": FNO2d, "cnn2d": CNN2d}
 
 
 def load_config(path: str | Path) -> dict:
@@ -58,7 +59,9 @@ def build_split(cfg: dict) -> Split:
 
 
 def build_scales(cfg: dict) -> Scales:
-    return Scales(time=cfg["data"]["time_scale"])
+    """data.time_scale: seconds, or "period" to scale each run by its own drive period."""
+    t = cfg["data"]["time_scale"]
+    return Scales(time=None if t == "period" else float(t))
 
 
 def build_dataset(

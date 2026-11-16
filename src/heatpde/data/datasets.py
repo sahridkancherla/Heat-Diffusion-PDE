@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import replace
 from typing import Literal
 
 import numpy as np
@@ -22,7 +23,7 @@ class WindowDataset(Dataset):
 
     x: (C, 8, window) channels = [forcing, (initial profile), (α̂), z, t], broadcast over the grid.
     y: (1, 8, window) normalised temperatures.
-    t is time since the window start divided by ``scales.time``, so runs with different dt agree.
+    t is time since the window start divided by ``scales.time`` (or the run's period if None).
     α̂ = scales.alpha(run.info.alpha) needs runs whose RunInfo went through assign_materials.
     """
 
@@ -57,15 +58,20 @@ class WindowDataset(Dataset):
                 if forcing == "thermistor_0"
                 else tensor(getattr(norm, forcing).encode(getattr(r, forcing)))
             )
-            self.times.append(tensor(scales.t(r.t)))
+            s = self.run_scales(scales, r)
+            self.times.append(tensor(s.t(r.t)))
             if alpha_channel:
                 if r.info.alpha is None or not np.isfinite(r.info.alpha):
                     raise ValueError(f"no measured alpha for {r.info.path.name}")
-                self.alphas.append(float(scales.alpha(r.info.alpha)))
+                self.alphas.append(float(s.alpha(r.info.alpha)))
             self.index += [(k, s) for s in range(0, len(r.t) - window + 1, stride or window)]
 
         if not self.index:
             raise ValueError(f"no run is at least {window} samples long")
+
+    @staticmethod
+    def run_scales(scales: Scales, run: ProcessedRun) -> Scales:
+        return scales if scales.time is not None else replace(scales, time=run.period)
 
     @staticmethod
     def n_channels(initial_condition: bool = True, alpha_channel: bool = False) -> int:

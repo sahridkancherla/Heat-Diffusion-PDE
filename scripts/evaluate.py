@@ -109,6 +109,7 @@ def main() -> None:
         rmse = rmse_per_sensor(pred, run.T)
         freq = drive_frequency_errors(run.t, pred, run.T, run.period)
         s = slice(skip, None)
+        ok = freq["used"] & (np.arange(8) >= skip)  # sensors where the drive signal is measurable
         rows.append(
             {
                 "file": run.info.path.name,
@@ -116,8 +117,9 @@ def main() -> None:
                 "period_s": run.info.period,
                 "rmse_C": float(np.sqrt(np.mean(rmse[s] ** 2))),
                 "max_err_C": float(max_error_per_sensor(pred, run.T)[s].max()),
-                "amp_err_pct": float(100 * np.mean(np.abs(freq["amp_ratio"][s] - 1))),
-                "phase_err_rad": float(np.mean(np.abs(freq["phase_err"][s]))),
+                "amp_err_pct": float(100 * np.mean(np.abs(freq["amp_ratio"][ok] - 1))),
+                "phase_err_rad": float(np.mean(np.abs(freq["phase_err"][ok]))),
+                "n_sensors_ok": int(ok.sum()),
                 "alpha_true": freq["alpha_true"],
                 "alpha_pred": freq["alpha_pred"],
             }

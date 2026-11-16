@@ -5,7 +5,7 @@ data:
   materials: [brass]          # material assigned from measured α; null = every drive run
   split:
     type: holdout_periods     # holdout_periods | holdout_materials | filter | random
-    test: [6, 55]             # extrapolation at both ends of the period range
+    test: [6, 55, 60]             # extrapolation at both ends of the period range
     val: [30]
   preprocess:
     points_per_period: 64

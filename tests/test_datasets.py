@@ -70,3 +70,24 @@ def test_alpha_channel_requires_alpha():
     runs = make_runs()
     with pytest.raises(ValueError, match="alpha"):
         WindowDataset(runs, RunNormalisers.fit(runs), Scales(1.0), window=50, alpha_channel=True)
+
+
+def test_period_time_scale():
+    from dataclasses import replace
+
+    runs = [
+        replace(r, period=p, info=replace(r.info, alpha=3e-5))
+        for r, p in zip(make_runs(), [5.0, 20.0], strict=True)
+    ]
+    ds = WindowDataset(
+        runs,
+        RunNormalisers.fit(runs),
+        Scales(time=None, length=0.04),
+        window=50,
+        alpha_channel=True,
+    )
+    x0, _ = ds[0]
+    x1, _ = ds[len(ds) - 1]
+    assert x0[4, 0, 1] == pytest.approx(0.1 / 5.0) and x1[4, 0, 1] == pytest.approx(0.1 / 20.0)
+    assert x0[2, 0, 0] == pytest.approx(3e-5 * 5.0 / 0.04**2)
+    assert x1[2, 0, 0] == pytest.approx(3e-5 * 20.0 / 0.04**2)

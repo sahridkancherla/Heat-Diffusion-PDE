@@ -59,7 +59,7 @@ class RunNormalisers:
 class Scales:
     """x̂ = x / length, t̂ = t / time. Dimensionless α̂ = α · time / length², ĥ = h · time."""
 
-    time: float  # s, e.g. a fixed reference so α̂ is comparable across drive periods
+    time: float | None  # s; None = each run's own drive period (WindowDataset.run_scales)
     length: float = ROD_LENGTH  # m
 
     def x(self, x):
