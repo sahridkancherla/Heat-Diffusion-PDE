@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from heatpde.data import DATA_DIR, list_runs, load_run
+from heatpde.physics.materials import assign_materials
 
 
 def main() -> None:
@@ -18,13 +19,15 @@ def main() -> None:
     args = parser.parse_args()
 
     rows = []
-    for info in list_runs(args.root, include_calibration=True):
+    for info in assign_materials(list_runs(args.root, include_calibration=True)):
         run = load_run(info.path)
         dt = np.diff(run.t)
         rows.append(
             {
                 "file": info.path.relative_to(args.root).as_posix(),
                 "material": info.material or "?",
+                "label": info.label or "",
+                "alpha": info.alpha,
                 "period_s": info.period,
                 "run": info.run_id,
                 "tag": info.tag or "",

@@ -59,9 +59,13 @@ class RunInfo:
     path: Path
     voltage: float | None = None  # drive amplitude [V]
     period: float | None = None  # drive period [s]
-    material: str | None = None  # canonical material name, None if not recorded
+    material: str | None = (
+        None  # from the filename, or from α after physics.materials.assign_materials
+    )
     run_id: str | None = None  # e.g. "2.1"; kept as a string so "2.10" != "2.1"
     tag: str | None = None  # trailing note, e.g. "light" / "dark"
+    label: str | None = None  # material as written in the filename (may be wrong)
+    alpha: float | None = None  # measured diffusivity [m²/s], set by assign_materials
 
     @property
     def is_drive_run(self) -> bool:
@@ -112,13 +116,15 @@ def parse_run_info(path: str | Path) -> RunInfo:
         material = path.parent.name
 
     tag = m["tag"]
+    material = _canonical_material(material)
     return RunInfo(
         path=path,
         voltage=float(m["voltage"]),
         period=float(m["period"]),
-        material=_canonical_material(material),
+        material=material,
         run_id=m["run_id"],
         tag=tag.strip().lower() if tag else None,
+        label=material,
     )
 
 

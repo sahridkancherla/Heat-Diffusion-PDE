@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Collection, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from typing import NamedTuple
 
 import numpy as np
@@ -16,6 +16,14 @@ class Split(NamedTuple):
     train: list[RunInfo]
     val: list[RunInfo]
     test: list[RunInfo]
+
+
+def matches(criteria: Mapping[str, Collection]) -> Predicate:
+    """``matches({"material": ["brass"], "period": [30]})``: every listed field in its values.
+
+    Empty criteria match nothing.
+    """
+    return lambda i: bool(criteria) and all(getattr(i, k) in v for k, v in criteria.items())
 
 
 def split_by(infos: Sequence[RunInfo], test: Predicate, val: Predicate = lambda _: False) -> Split:

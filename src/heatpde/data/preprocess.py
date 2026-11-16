@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 
@@ -81,4 +81,5 @@ def preprocess_run(
 
 
 def load_processed(infos: Iterable[RunInfo], **kwargs) -> list[ProcessedRun]:
-    return [preprocess_run(load_run(i.path), **kwargs) for i in infos]
+    """Keeps the given RunInfo (e.g. material/alpha from assign_materials)."""
+    return [replace(preprocess_run(load_run(i.path), **kwargs), info=i) for i in infos]

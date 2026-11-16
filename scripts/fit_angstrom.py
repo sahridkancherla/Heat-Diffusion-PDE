@@ -23,7 +23,7 @@ def main() -> None:
     for info in list_runs():
         row = {
             "file": info.path.name,
-            "material": info.material or "?",
+            "label": info.label or "?",
             "run": info.run_id,
             "period_s": info.period,
         }
@@ -52,8 +52,8 @@ def main() -> None:
     ):
         print(df.to_string(index=False))
         ok = df.dropna(subset=["alpha"])
-        print("\nalpha by material (m^2/s):")
-        print(ok.groupby("material")["alpha"].describe()[["count", "mean", "std", "min", "max"]])
+        print("\nalpha by filename label (m^2/s):")
+        print(ok.groupby("label")["alpha"].describe()[["count", "mean", "std", "min", "max"]])
     if args.csv:
         df.to_csv(args.csv, index=False)
 

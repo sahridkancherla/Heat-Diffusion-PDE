@@ -67,3 +67,13 @@ def test_splits_partition():
     r = random_split(infos, val_frac=1 / 6, test_frac=1 / 6)
     assert sorted(map(str, sum(r, []))) == sorted(map(str, infos))
     assert (len(r.train), len(r.val), len(r.test)) == (4, 1, 1)
+
+
+def test_matches_filter():
+    from heatpde.data.splits import matches, split_by
+
+    infos = [RunInfo(Path(f"{p}{m}.csv"), 7.0, p, m) for p in (10, 30) for m in ("brass", "steel")]
+    s = split_by(infos, matches({"material": ["brass"]}), matches({"period": [30]}))
+    assert [(i.period, i.material) for i in s.test] == [(10, "brass"), (30, "brass")]
+    assert [(i.period, i.material) for i in s.val] == [(30, "steel")]
+    assert not any(matches({})(i) for i in infos)

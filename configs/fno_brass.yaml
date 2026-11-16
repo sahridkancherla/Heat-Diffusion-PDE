@@ -1,0 +1,43 @@
+name: fno_brass
+seed: 0
+
+data:
+  materials: [brass]          # material assigned from measured α; null = every drive run
+  split:
+    type: holdout_periods     # holdout_periods | holdout_materials | filter | random
+    test: [6, 55]             # extrapolation at both ends of the period range
+    val: [30]
+  preprocess:
+    points_per_period: 64
+    skip_cycles: 0
+  dataset:
+    window: 256               # 4 drive cycles
+    stride: 64
+    forcing: thermistor_0
+    initial_condition: true
+    alpha_channel: false      # one material: α is constant, so no need
+  time_scale: 60.0            # s; t channel = t / time_scale
+  batch_size: 16
+
+model:
+  name: fno2d
+  kwargs:                     # in_c is set from data.dataset (initial_condition, alpha_channel)
+    k_z: 4                    # 2 * k_z <= 8 + pad_z
+    k_t: 32
+    width: 32
+    num_layers: 4
+    pad_t_frac: 0.25
+    pad_z: 4
+
+loss:
+  skip_sensors: 1             # thermistor_0 is the forcing input
+
+train:
+  epochs: 400
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  grad_clip: 1.0
+  patience: null              # cosine: run all epochs; best.pt keeps the best
+  min_delta: 0.0              # val-loss improvement needed to reset patience
+  out_dir: outputs/fno_brass
+  device: null

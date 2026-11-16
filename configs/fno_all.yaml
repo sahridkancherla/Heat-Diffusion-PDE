@@ -1,0 +1,43 @@
+name: fno_all
+seed: 0
+
+data:
+  materials: null             # steel, brass and aluminium (assigned from measured α)
+  split:
+    type: filter
+    test: {period: [5, 6, 55, 60]}   # shortest and longest periods of every material
+    val: {period: [30]}
+  preprocess:
+    points_per_period: 64
+    skip_cycles: 0
+  dataset:
+    window: 256
+    stride: 64
+    forcing: thermistor_0
+    initial_condition: true
+    alpha_channel: true       # tells the model which cylinder it is looking at
+  time_scale: 60.0
+  batch_size: 16
+
+model:
+  name: fno2d
+  kwargs:
+    k_z: 4
+    k_t: 32
+    width: 32
+    num_layers: 4
+    pad_t_frac: 0.25
+    pad_z: 4
+
+loss:
+  skip_sensors: 1
+
+train:
+  epochs: 400
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  grad_clip: 1.0
+  patience: null
+  min_delta: 0.0
+  out_dir: outputs/fno_all
+  device: null

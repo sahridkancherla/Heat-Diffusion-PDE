@@ -50,3 +50,23 @@ def test_voltage_forcing_without_initial_condition():
 def test_window_too_long():
     with pytest.raises(ValueError):
         WindowDataset(make_runs(), RunNormalisers.fit(make_runs()), Scales(1.0), window=101)
+
+
+def test_alpha_channel():
+    from dataclasses import replace
+
+    runs = make_runs()
+    runs = [
+        replace(r, info=replace(r.info, alpha=a)) for r, a in zip(runs, [1e-5, 3e-5], strict=True)
+    ]
+    scales = Scales(time=60.0, length=0.041)
+    ds = WindowDataset(runs, RunNormalisers.fit(runs), scales, window=50, alpha_channel=True)
+    x, _ = ds[len(ds) - 1]
+    assert ds.in_channels == WindowDataset.n_channels(True, True) == 5 == x.shape[0]
+    assert torch.allclose(x[2], torch.full_like(x[2], scales.alpha(3e-5)))
+
+
+def test_alpha_channel_requires_alpha():
+    runs = make_runs()
+    with pytest.raises(ValueError, match="alpha"):
+        WindowDataset(runs, RunNormalisers.fit(runs), Scales(1.0), window=50, alpha_channel=True)
